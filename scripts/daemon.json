@@ -1,0 +1,8 @@
+{
+	"registry-mirrors":[
+	  "http://f1361db2.m.daocloud.io",
+	  "https://registry.docker-cn.com"
+	],
+	"insecure-registries":["10.10.2.30:4000"]
+
+}

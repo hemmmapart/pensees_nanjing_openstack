@@ -1,0 +1,141 @@
+---
+- hosts: ALL
+  remote_user: root
+  tasks:
+    - name: push ssh keys to all other nodes
+      authorized_key: user=root key= "{{ lookup('file', '/root/.ssh/id_rsa.pub') }}"
+      tags:
+        - sshkey
+
+    - name: copy hosts to server
+      copy:
+        src: scripts/hosts
+        dest: /etc/hosts
+
+    - name: install epel-release
+      yum:
+        name: epel-release
+        state: latest
+    - name: install python pip
+      yum:
+        name: python-pip
+        state: latest
+    - name: create ~/.pip directory
+      file:
+        path: ~/.pip/
+        state: directory
+    - name: change pip registry
+      copy:
+        src: scripts/pip.conf
+        dest: ~/.pip/pip.conf
+    - name: upgrade pip
+      pip:
+        name: pip
+        extra_args: --upgrade
+      retries: 3
+    - name: install Docker Python
+      pip:
+        name: docker
+        extra_args: --ignore-installed
+      retries: 3
+
+    - name: Install yum utils
+      yum:
+        name: yum-utils
+        state: latest
+
+    - name: Install device-mapper-persistent-data
+      yum:
+        name: device-mapper-persistent-data
+        state: latest
+
+    - name: Install lvm2
+      yum:
+        name: lvm2
+        state: latest
+
+    - name: Add Docker repo
+      get_url:
+        url: https://download.docker.com/linux/centos/docker-ce.repo
+        dest: /etc/yum.repos.d/docer-ce.repo
+      become: yes
+      retries: 5
+
+    - name: Install Docker
+      yum:
+        name: docker-ce
+        state: latest
+        disable_gpg_check: yes
+      become: yes
+      retries: 5
+
+    - name: Start Docker service
+      service:
+        name: docker
+        state: started
+        enabled: yes
+      become: yes
+
+    - name: copy daemon.json to server
+      copy:
+        src: scripts/daemon.json
+        dest: /etc/docker/daemon.json
+    - name: restart docker daemon
+      service:
+        name: docker
+        state: restarted
+
+    - name: install docker python
+      pip:
+        name: docker
+    
+    - name: slove the conflicts
+      yum:
+        name: "{{ packages }}"
+        state: absent
+      vars:
+        packages:
+          - python-urllib3
+          - python-requests
+      become: yes
+    - name: slove the conflicts 2/3
+      pip:
+        name: "{{ pythonPkgs }}"
+        state: absent
+      vars:
+        pythonPkgs:
+          - requests
+          - urllib3
+      become: yes
+    - name: slove the conflicts 3/3
+      yum:
+        name: "{{ packages }}"
+        state: present
+      vars:
+        packages:
+          - python-urllib3
+          - python-requests
+      become: yes
+
+    - name: Install qemu-kvm qemu-img virt-manager
+      yum:
+        name: "{{ packages }}"
+      vars:
+        packages:
+        - qemu-kvm 
+        - qemu-img
+        - virt-manager
+        - libvirt
+        - libvirt-python
+        - libvirt-client
+        - virt-install
+        - virt-viewer
+        - bridge-utils
+        - vim
+      become: yes
+
+    - name: Start lvm2-lvmetad
+      service: name=lvm2-lvmetad state=started enabled=yes
+
+    - name: Stop libvirt
+      service: name=libvirtd state=stopped enabled=no

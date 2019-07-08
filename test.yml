@@ -1,0 +1,4 @@
+---
+- hosts: ALL
+  tasks:
+    - command: ls

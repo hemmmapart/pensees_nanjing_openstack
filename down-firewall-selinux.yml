@@ -1,0 +1,16 @@
+---
+- hosts: ALL
+  remote_user: root
+  tasks:
+    - name: stop the firewall and selinux
+      script: scripts/down-firewall-selinux.sh
+      become: yes
+      ignore_errors: yes
+      register: result
+    - debug: var=result
+
+    - name: change selinux file
+      copy:
+        src: scripts/selinux-config
+        dest: /etc/selinux/config
+      become: yes

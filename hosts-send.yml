@@ -1,0 +1,13 @@
+---
+- hosts: ALL
+  remote_user: root
+  tasks:
+    - name: push ssh keys to all other nodes
+      authorized_key: user=root key= "{{ lookup('file', '/root/.ssh/id_rsa.pub') }}"
+      tags:
+        - sshkey
+
+    - name: copy hosts to server
+      copy:
+        src: scripts/hosts
+        dest: /etc/hosts
